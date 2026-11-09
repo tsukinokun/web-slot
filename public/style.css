@@ -12,14 +12,34 @@ body {
 button { font: inherit; cursor: pointer; }
 [hidden] { display: none !important; }
 
-/* ---- 背景：海と太陽。ボーナス中は色が変わる ---- */
-.sky { position: fixed; inset: 0; z-index: -1; overflow: hidden;
-  background: linear-gradient(#36b6d6 0%, #1a8fb0 45%, var(--sea) 70%, var(--sea-deep) 100%); transition: filter .6s; }
-.sunrays { position: absolute; left: 50%; top: -60vmax; width: 140vmax; height: 140vmax; margin-left: -70vmax; opacity: .18;
-  background: repeating-conic-gradient(#fff6 0 6deg, transparent 6deg 18deg); animation: spin 60s linear infinite; }
-body[data-mode="big"] .sky { background: linear-gradient(#ff8a00, #ff2d6f 50%, #7b1fa2); }
-body[data-mode="reg"] .sky { background: linear-gradient(#22c1c3, #2b6fd6 55%, #1a237e); }
-body[data-mode] .sunrays { opacity: .35; animation-duration: 6s; }
+/* ---- 背景：南国のビーチ。ボーナス中は夕焼け（BIG）／夜の海（REG） ---- */
+.sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #3cc3e8; }
+.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sky1 { stop-color: #2fb7ec; } .sky2 { stop-color: #8fe0f7; } .sky3 { stop-color: #d8f6ff; }
+.sea1 { stop-color: #11b5c9; } .sea2 { stop-color: #1fd0c5; } .sea3 { stop-color: #7ff0dc; }
+.sun1 { stop-color: #ffe066; } .sun2 { stop-color: #ffb21e; }
+.sun-disc { fill: #fff3a8; }
+.island { fill: #2b8a5a; }
+.scene stop { transition: stop-color 1s; }
+.cloud { animation: drift 40s linear infinite alternate; }
+.c2 { animation-duration: 55s; } .c3 { animation-duration: 33s; }
+@keyframes drift { to { transform: translateX(120px); } }
+.waves { animation: wave 3s ease-in-out infinite alternate; }
+@keyframes wave { to { transform: translate(-100px, 6px); } }
+.glints { animation: glint 2s ease-in-out infinite alternate; }
+@keyframes glint { from { opacity: .2; } to { opacity: .9; } }
+.sun-glow { transform-origin: 1180px 230px; animation: glow 4s ease-in-out infinite alternate; }
+@keyframes glow { to { transform: scale(1.12); } }
+.fronds { transform-origin: 30px -400px; animation: sway 4s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.sunrays { position: absolute; left: 50%; top: -60vmax; width: 140vmax; height: 140vmax; margin-left: -70vmax; opacity: 0;
+  background: repeating-conic-gradient(#fff6 0 6deg, transparent 6deg 18deg); animation: spin 60s linear infinite; transition: opacity .6s; }
+body[data-mode="big"] .sky1 { stop-color: #ff3d7f; } body[data-mode="big"] .sky2 { stop-color: #ff8a3d; } body[data-mode="big"] .sky3 { stop-color: #ffd36b; }
+body[data-mode="big"] .sea1 { stop-color: #ff7a59; } body[data-mode="big"] .sea2 { stop-color: #c2457a; } body[data-mode="big"] .sea3 { stop-color: #6a2c8a; }
+body[data-mode="big"] .sun1 { stop-color: #ff6a00; }
+body[data-mode="reg"] .sky1 { stop-color: #1a237e; } body[data-mode="reg"] .sky2 { stop-color: #3949ab; } body[data-mode="reg"] .sky3 { stop-color: #7e57c2; }
+body[data-mode="reg"] .sea1 { stop-color: #283593; } body[data-mode="reg"] .sea2 { stop-color: #1565c0; } body[data-mode="reg"] .sea3 { stop-color: #26c6da; }
+body[data-mode] .sunrays { opacity: .3; animation-duration: 6s; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .petals span { position: absolute; top: -40px; font-size: 26px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
@@ -29,7 +49,7 @@ body[data-mode] .sunrays { opacity: .35; animation-duration: 6s; }
   text-shadow: 0 3px 0 #b34700, 0 6px 14px #0006; }
 .logo span { color: var(--hibi); text-shadow: 0 3px 0 #7a0f22, 0 6px 14px #0006; }
 .logo.small { font-size: 26px; text-align: center; }
-.sub { color: #fff; margin: 4px 0 20px; }
+.sub { color: #063a52; font-weight: 700; margin: 4px 0 20px; text-shadow: 0 1px 0 #fff8; }
 
 .panel { background: var(--panel); border-radius: 14px; padding: 14px 16px; box-shadow: 0 6px 18px #0004; }
 .login { max-width: 360px; margin: 12vh auto 0; text-align: center; background: transparent; box-shadow: none; }
@@ -37,7 +57,7 @@ body[data-mode] .sunrays { opacity: .35; animation-duration: 6s; }
 .login input { font-size: 18px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); }
 .login button { font-size: 20px; padding: 12px; border: 0; border-radius: 10px; color: #fff; font-weight: 800;
   background: linear-gradient(var(--hibi), #a5122e); box-shadow: 0 4px 0 #6d0b1d; }
-.msg { color: #fff; min-height: 1.5em; }
+.msg { color: #063a52; font-weight: 700; min-height: 1.5em; }
 
 /* ---- 全体レイアウト ---- */
 .layout { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 300px); gap: 18px; justify-content: center; padding: 16px; }
@@ -99,15 +119,12 @@ body[data-mode] .sunrays { opacity: .35; animation-duration: 6s; }
 .msg-box { text-align: center; font-family: inherit; font-size: 15px; color: #fff; min-height: 2.6em; display: grid; place-items: center; }
 
 /* ---- ボタン ---- */
-.controls { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
-.lever { height: 72px; border: 0; border-radius: 40px; font-weight: 900; font-size: 18px; color: #fff;
-  background: radial-gradient(circle at 35% 30%, #ff6b82, var(--hibi) 55%, #8d0f27); box-shadow: 0 5px 0 #5c0718; }
-.lever:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #5c0718; }
-.stops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.stop { height: 62px; border: 0; border-radius: 12px; font-size: 22px; color: #fff;
-  background: linear-gradient(#5aa9e6, #1d5f99); box-shadow: 0 5px 0 #0f3a60; }
-.stop.ready { background: linear-gradient(#7fe0ff, #1d8fd9); box-shadow: 0 5px 0 #0f3a60, 0 0 14px #7fe0ff; }
-.stop:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #0f3a60; }
+.controls { display: grid; }
+.lever { height: 78px; border: 0; border-radius: 40px; font-weight: 900; font-size: 28px; color: #fff; letter-spacing: .1em;
+  background: radial-gradient(circle at 35% 30%, #ff6b82, var(--hibi) 55%, #8d0f27); box-shadow: 0 6px 0 #5c0718, 0 0 0 4px #ffd84a; }
+.lever:not(:disabled):hover { filter: brightness(1.1); }
+.lever:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 #5c0718, 0 0 0 4px #ffd84a; }
+.reels-frame.reach { animation: flash .2s infinite alternate; }
 button:disabled { opacity: .45; cursor: default; }
 
 .rate { margin-top: 12px; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; }
@@ -164,5 +181,5 @@ button:disabled { opacity: .45; cursor: default; }
 @keyframes shake { 25% { transform: translate(-6px, 3px); } 50% { transform: translate(6px, -3px); } 75% { transform: translate(-3px, 2px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .sunrays, .lamp.on, .lamp.rainbow, .bonus-bar { animation: none !important; }
+  .sunrays, .cloud, .waves, .fronds, .sun-glow, .lamp.on, .lamp.rainbow, .bonus-bar { animation: none !important; }
 }

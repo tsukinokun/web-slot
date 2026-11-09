@@ -177,10 +177,6 @@ async function loadBalance() {
 
 function updateButtons() {
   $('lever').disabled = phase !== 'idle';
-  document.querySelectorAll('.stop').forEach((b, i) => {
-    const can = phase === 'spinning' && !stopped[i];
-    b.disabled = !can; b.classList.toggle('ready', can);
-  });
 }
 
 // ================= 1回転の流れ =================
@@ -214,8 +210,14 @@ async function lever() {
 
   reels.forEach(r => r.start());
   phase = 'spinning'; updateButtons();
-  if ($('autoStop').checked) {
-    await sleep(450); for (let i = 0; i < 3; i++) { await stopReel(i); await sleep(180); }
+  // リールは自動で左から順に止まる。7-7 のリーチのときは最後のリールをじらす
+  await sleep(800);
+  for (let i = 0; i < 3; i++) {
+    const reach = i === 2 && current.symbols[0] === 'seven' && current.symbols[1] === 'seven';
+    if (reach) { $('reelsFrame').classList.add('reach'); await sleep(900); }
+    await stopReel(i);
+    $('reelsFrame').classList.remove('reach');
+    if (i < 2) await sleep(220);
   }
 }
 
@@ -232,7 +234,6 @@ function stopReel(i) {
   });
   return stopQueue;
 }
-function nextStop() { const i = stopped.findIndex(s => !s); if (i >= 0) stopReel(i); }
 
 async function finish() {
   phase = 'result'; updateButtons();
@@ -312,17 +313,13 @@ $('logout').onclick = async () => {
 
 // ================= 操作 =================
 $('lever').onclick = lever;
-document.querySelectorAll('.stop').forEach(b => b.onclick = () => stopReel(Number(b.dataset.i)));
 $('rate').oninput = showRate;
 document.querySelectorAll('[data-rate]').forEach(b => b.onclick = () => { $('rate').value = b.dataset.rate; showRate(); });
 $('sound').onchange = () => { try { localStorage.setItem('tida-sound', $('sound').checked ? '1' : '0'); } catch {} if (!$('sound').checked) Sound.bgmStop(); else if (state?.bonus?.game > 0) Sound.bgm(state.bonus.type); };
-$('autoStop').onchange = () => { try { localStorage.setItem('tida-auto', $('autoStop').checked ? '1' : '0'); } catch {} };
-try { $('sound').checked = localStorage.getItem('tida-sound') !== '0'; $('autoStop').checked = localStorage.getItem('tida-auto') === '1'; } catch {}
+try { $('sound').checked = localStorage.getItem('tida-sound') !== '0'; } catch {}
 addEventListener('keydown', e => {
   if ($('gamePanel').hidden || e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return;
-  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); phase === 'idle' ? lever() : nextStop(); }
-  const k = { Digit1: 0, Digit2: 1, Digit3: 2, ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.code];
-  if (k !== undefined) { e.preventDefault(); stopReel(k); }
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); lever(); }
 });
 
 // ================= 起動 =================
