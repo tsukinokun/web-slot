@@ -1,0 +1,168 @@
+:root {
+  --cell: 84px;
+  --sea: #0b6e8a; --sea-deep: #063a52; --sand: #fff3d6; --sun: #ffb21e; --hibi: #e8304f;
+  --ink: #22201c; --panel: rgba(255, 251, 240, .94); --line: #e3c98f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  color: var(--ink); background: var(--sea-deep); overflow-x: hidden;
+}
+button { font: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---- 背景：海と太陽。ボーナス中は色が変わる ---- */
+.sky { position: fixed; inset: 0; z-index: -1; overflow: hidden;
+  background: linear-gradient(#36b6d6 0%, #1a8fb0 45%, var(--sea) 70%, var(--sea-deep) 100%); transition: filter .6s; }
+.sunrays { position: absolute; left: 50%; top: -60vmax; width: 140vmax; height: 140vmax; margin-left: -70vmax; opacity: .18;
+  background: repeating-conic-gradient(#fff6 0 6deg, transparent 6deg 18deg); animation: spin 60s linear infinite; }
+body[data-mode="big"] .sky { background: linear-gradient(#ff8a00, #ff2d6f 50%, #7b1fa2); }
+body[data-mode="reg"] .sky { background: linear-gradient(#22c1c3, #2b6fd6 55%, #1a237e); }
+body[data-mode] .sunrays { opacity: .35; animation-duration: 6s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.petals span { position: absolute; top: -40px; font-size: 26px; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+
+/* ---- ロゴ ---- */
+.logo { margin: 0; font-size: 44px; font-weight: 900; color: var(--sun); letter-spacing: .04em;
+  text-shadow: 0 3px 0 #b34700, 0 6px 14px #0006; }
+.logo span { color: var(--hibi); text-shadow: 0 3px 0 #7a0f22, 0 6px 14px #0006; }
+.logo.small { font-size: 26px; text-align: center; }
+.sub { color: #fff; margin: 4px 0 20px; }
+
+.panel { background: var(--panel); border-radius: 14px; padding: 14px 16px; box-shadow: 0 6px 18px #0004; }
+.login { max-width: 360px; margin: 12vh auto 0; text-align: center; background: transparent; box-shadow: none; }
+.login form { display: grid; gap: 10px; }
+.login input { font-size: 18px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); }
+.login button { font-size: 20px; padding: 12px; border: 0; border-radius: 10px; color: #fff; font-weight: 800;
+  background: linear-gradient(var(--hibi), #a5122e); box-shadow: 0 4px 0 #6d0b1d; }
+.msg { color: #fff; min-height: 1.5em; }
+
+/* ---- 全体レイアウト ---- */
+.layout { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 300px); gap: 18px; justify-content: center; padding: 16px; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 520px); } }
+@media (max-width: 420px) { :root { --cell: 66px; } .layout { padding: 10px; } }
+
+/* ---- 台 ---- */
+.machine { background: linear-gradient(#fff8e6, #f2dca8); border-radius: 22px; padding: 14px;
+  border: 4px solid #c58a2c; box-shadow: 0 0 0 4px #7a4d10, 0 14px 30px #0008; }
+.top { position: relative; }
+.lamp-wrap { display: flex; justify-content: center; margin: 8px 0 10px; }
+.lamp { width: 120px; height: 120px; border-radius: 50%; position: relative; display: grid; place-items: center;
+  background: radial-gradient(circle, #7a5a3a 0 40%, #5a4030 41% 100%); box-shadow: inset 0 0 18px #0008; transition: transform .2s; }
+.lamp::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; z-index: -1; opacity: .25;
+  background: repeating-conic-gradient(#8a6a4a 0 10deg, transparent 10deg 30deg); }
+.lamp-core { color: #c9a77f; font-weight: 900; font-size: 15px; line-height: 1.05; text-align: center; }
+.lamp.on { background: radial-gradient(circle, #fffbe0 0 22%, #ffd84a 40%, #ff8a00 75%, #e14b00 100%);
+  box-shadow: 0 0 30px 10px #ffb21e, 0 0 80px 30px #ff7a0088; animation: pulse 1s ease-in-out infinite; }
+.lamp.on::before { opacity: 1; background: repeating-conic-gradient(#ffd84a 0 10deg, transparent 10deg 30deg); animation: spin 4s linear infinite; }
+.lamp.on .lamp-core { color: #b33a00; }
+.lamp.rainbow { background: conic-gradient(red, orange, yellow, lime, cyan, blue, violet, red);
+  box-shadow: 0 0 40px 16px #fff, 0 0 90px 40px #f0f8; animation: pulse .6s ease-in-out infinite, hue 1.2s linear infinite; }
+.lamp.rainbow::before { opacity: 1; background: repeating-conic-gradient(#fff 0 10deg, transparent 10deg 30deg); animation: spin 2s linear infinite; }
+.lamp.rainbow .lamp-core { color: #fff; text-shadow: 0 0 6px #000; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+
+.bonus-bar { text-align: center; font-weight: 900; font-size: 20px; color: #fff; border-radius: 10px; padding: 6px; margin-bottom: 8px;
+  background: linear-gradient(90deg, #ff2d6f, #ff8a00, #ff2d6f); background-size: 200% 100%; animation: slide 1.5s linear infinite; }
+.bonus-bar.reg { background: linear-gradient(90deg, #2b6fd6, #22c1c3, #2b6fd6); background-size: 200% 100%; }
+@keyframes slide { to { background-position: 200% 0; } }
+
+/* ---- リール ---- */
+.reels-frame { position: relative; background: #2a1a0a; border-radius: 12px; padding: 8px; box-shadow: inset 0 0 0 3px #c58a2c; }
+.reels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.reel { height: calc(var(--cell) * 3); overflow: hidden; border-radius: 6px; position: relative;
+  background: linear-gradient(#cfc5ae, #fffdf5 30%, #fffdf5 70%, #cfc5ae); }
+.reel::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(#0006, transparent 25%, transparent 75%, #0006); }
+.strip { will-change: transform; }
+.cell { height: var(--cell); display: grid; place-items: center; font-size: calc(var(--cell) * .55); line-height: 1; user-select: none; }
+.sym-seven { font-family: Impact, "Arial Black", sans-serif; font-weight: 900; color: var(--hibi); font-size: calc(var(--cell) * .72);
+  -webkit-text-stroke: 2px #7a0f22; text-shadow: 0 3px 0 #ffd84a; }
+.sym-bar { font-family: Impact, "Arial Black", sans-serif; font-size: calc(var(--cell) * .28); color: #fff; background: #222;
+  padding: 4px 8px; border-radius: 4px; border: 3px solid #ffd84a; letter-spacing: .05em; }
+.payline { position: absolute; left: 4px; right: 4px; top: 50%; height: 3px; margin-top: -1px; background: #e8304f99; pointer-events: none; }
+.reels-frame.flash { animation: flash .15s 4 alternate; }
+@keyframes flash { to { box-shadow: inset 0 0 0 3px #fff, 0 0 30px #fff; filter: brightness(1.6); } }
+.reels-frame.win .payline { background: #ffd84a; box-shadow: 0 0 12px #ffd84a; }
+.freeze { position: absolute; inset: 0; background: #000; border-radius: 12px; animation: fadein .3s; }
+@keyframes fadein { from { opacity: 0; } }
+
+/* ---- 液晶 ---- */
+.lcd { display: grid; grid-template-columns: 70px 1fr 70px; gap: 8px; margin: 10px 0; align-items: center;
+  background: #10261c; color: #9effa8; border-radius: 10px; padding: 8px; font-family: ui-monospace, monospace; }
+.lcd small { display: block; font-size: 11px; opacity: .7; }
+.lcd b { font-size: 22px; }
+.lcd > div:first-child, .lcd > div:last-child { text-align: center; }
+.msg-box { text-align: center; font-family: inherit; font-size: 15px; color: #fff; min-height: 2.6em; display: grid; place-items: center; }
+
+/* ---- ボタン ---- */
+.controls { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.lever { height: 72px; border: 0; border-radius: 40px; font-weight: 900; font-size: 18px; color: #fff;
+  background: radial-gradient(circle at 35% 30%, #ff6b82, var(--hibi) 55%, #8d0f27); box-shadow: 0 5px 0 #5c0718; }
+.lever:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #5c0718; }
+.stops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stop { height: 62px; border: 0; border-radius: 12px; font-size: 22px; color: #fff;
+  background: linear-gradient(#5aa9e6, #1d5f99); box-shadow: 0 5px 0 #0f3a60; }
+.stop.ready { background: linear-gradient(#7fe0ff, #1d8fd9); box-shadow: 0 5px 0 #0f3a60, 0 0 14px #7fe0ff; }
+.stop:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #0f3a60; }
+button:disabled { opacity: .45; cursor: default; }
+
+.rate { margin-top: 12px; background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.rate label { font-weight: 700; }
+.rate input { width: 100%; accent-color: var(--hibi); }
+.rate-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.rate-quick button { border: 1px solid var(--line); background: var(--sand); border-radius: 8px; padding: 6px 0; }
+.note { color: var(--hibi); font-size: 13px; margin: 6px 0 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 14px; }
+.keys { color: #7a6a50; font-size: 12px; }
+
+/* ---- サイド ---- */
+.side { display: grid; gap: 14px; align-content: start; }
+.side h2 { margin: 0 0 8px; font-size: 16px; }
+.who { display: flex; justify-content: space-between; font-weight: 700; }
+.link { border: 0; background: none; color: var(--sea); text-decoration: underline; }
+.balance { font-size: 20px; font-weight: 800; margin-top: 4px; }
+.net { font-size: 14px; color: #555; }
+.counter { background: #1b1b22; color: #fff; }
+.big-num { text-align: center; color: #ff5a5a; font-family: ui-monospace, monospace; }
+.big-num b { font-size: 46px; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-family: ui-monospace, monospace; }
+.grid small, .history small { display: block; font-size: 11px; color: #aaa; }
+.grid b { font-size: 18px; }
+.c-big { color: #ff5a8a; } .c-reg { color: #5ab4ff; }
+.history { list-style: none; margin: 10px 0 0; padding: 0; max-height: 220px; overflow: auto; font-size: 13px; }
+.history li { display: grid; grid-template-columns: 34px 1fr auto; gap: 6px; padding: 4px 2px; border-top: 1px solid #333; }
+.history .t-big { color: #ff5a8a; font-weight: 800; } .history .t-reg { color: #5ab4ff; font-weight: 800; }
+.info table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.info th { text-align: left; font-weight: 600; padding: 3px 0; } .info td { text-align: right; font-weight: 800; }
+.guide { margin: 10px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+.rainbow-text { font-weight: 900; background: linear-gradient(90deg, red, orange, #cc0, green, blue, violet);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---- 演出用オーバーレイ ---- */
+.overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: #000b; padding: 16px; }
+.overlay-inner { text-align: center; color: #fff; font-weight: 900; }
+.ov-title { font-size: clamp(26px, 7vw, 54px); text-shadow: 0 0 16px currentColor; }
+.ov-count { font-size: clamp(70px, 22vw, 160px); line-height: 1.1; animation: pop .5s; }
+.ov-sun { width: 160px; height: 160px; margin: 16px auto; border-radius: 50%; animation: pulse .5s infinite; }
+.lv1 .ov-sun { background: radial-gradient(#bfe6ff, #3a8fd9); box-shadow: 0 0 40px #3a8fd9; }
+.lv2 .ov-sun { background: radial-gradient(#d6ffcc, #2fb34a); box-shadow: 0 0 50px #2fb34a; }
+.lv3 .ov-sun { background: radial-gradient(#fff2c4, #ff3b3b); box-shadow: 0 0 70px #ff3b3b; }
+.lv4 .ov-sun { background: conic-gradient(red, orange, yellow, lime, cyan, blue, violet, red); box-shadow: 0 0 90px #fff; animation: pulse .4s infinite, hue 1s linear infinite; }
+.ov-result { font-size: clamp(48px, 14vw, 110px); animation: pop .6s; }
+.ov-result.win { color: #ffd84a; text-shadow: 0 0 20px #ff8a00, 0 0 50px #ff2d6f; }
+.ov-result.lose { color: #9ab; font-size: clamp(36px, 10vw, 70px); }
+.ov-sub { font-size: clamp(18px, 4.5vw, 28px); margin-top: 8px; }
+.ov-fanfare { font-size: clamp(40px, 12vw, 96px); animation: pop .6s; }
+.ov-fanfare.big { color: #ffd84a; text-shadow: 0 0 20px #ff2d6f, 0 0 40px #ff8a00; }
+.ov-fanfare.reg { color: #9fe8ff; text-shadow: 0 0 20px #2b6fd6, 0 0 40px #22c1c3; }
+@keyframes pop { from { transform: scale(.3); opacity: 0; } 70% { transform: scale(1.15); } }
+.shake { animation: shake .4s; }
+@keyframes shake { 25% { transform: translate(-6px, 3px); } 50% { transform: translate(6px, -3px); } 75% { transform: translate(-3px, 2px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sunrays, .lamp.on, .lamp.rainbow, .bonus-bar { animation: none !important; }
+}

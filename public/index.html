@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>てぃだパラダイス</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sky"><div class="sunrays"></div><div class="petals" id="petals"></div></div>
+
+<section id="loginPanel" class="panel login" hidden>
+  <h1 class="logo">てぃだ<span>パラダイス</span></h1>
+  <p class="sub">南国ランプ告知スロット</p>
+  <form id="loginForm">
+    <input id="username" placeholder="ID" autocomplete="username" required>
+    <input id="password" type="password" placeholder="パスワード" autocomplete="current-password" required>
+    <button>入店する</button>
+  </form>
+  <p id="loginMessage" class="msg"></p>
+</section>
+
+<main id="gamePanel" hidden>
+  <div class="layout">
+    <section class="machine">
+      <header class="top">
+        <h1 class="logo small">てぃだ<span>パラダイス</span></h1>
+        <div class="lamp-wrap"><div id="lamp" class="lamp"><div class="lamp-core">て<br>ぃ<br>だ</div></div></div>
+        <div id="bonusBar" class="bonus-bar" hidden></div>
+      </header>
+
+      <div class="reels-frame" id="reelsFrame">
+        <div class="reels">
+          <div class="reel"><div class="strip" id="strip0"></div></div>
+          <div class="reel"><div class="strip" id="strip1"></div></div>
+          <div class="reel"><div class="strip" id="strip2"></div></div>
+        </div>
+        <div class="payline"></div>
+        <div id="freeze" class="freeze" hidden></div>
+      </div>
+
+      <div class="lcd">
+        <div><small>BET</small><b id="betView">-</b></div>
+        <div class="msg-box" id="message">レバー（スペースキー）で回転</div>
+        <div><small>PAY</small><b id="payView">0</b></div>
+      </div>
+
+      <div class="controls">
+        <button id="lever" class="lever">レバー</button>
+        <div class="stops">
+          <button class="stop" data-i="0">●</button>
+          <button class="stop" data-i="1">●</button>
+          <button class="stop" data-i="2">●</button>
+        </div>
+      </div>
+
+      <div class="rate">
+        <label>1枚の値段 <b id="rateView">10</b>G <small>（1回転 <b id="spinCost">30</b>G）</small></label>
+        <input id="rate" type="range" min="10" max="33" step="1" value="10">
+        <div class="rate-quick">
+          <button data-rate="10">10G</button><button data-rate="20">20G</button><button data-rate="30">30G</button><button data-rate="33">33G</button>
+        </div>
+        <p id="rateLock" class="note" hidden>ボーナス確定中・ボーナス中は1枚の値段を変えられません</p>
+      </div>
+
+      <div class="toggles">
+        <label><input type="checkbox" id="autoStop"> オート停止</label>
+        <label><input type="checkbox" id="sound" checked> 音</label>
+        <span class="keys">スペース：レバー/順に停止　1・2・3：各リール停止</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="who"><span id="welcome"></span><button id="logout" class="link">退店</button></div>
+        <div id="balance" class="balance">-</div>
+        <div id="sessionNet" class="net"></div>
+      </div>
+
+      <div class="panel counter">
+        <h2>データカウンター</h2>
+        <div class="big-num"><small>現在</small><b id="since">0</b><small>G</small></div>
+        <div class="grid">
+          <div><small>総回転</small><b id="spins">0</b></div>
+          <div><small>BIG</small><b id="bigCount" class="c-big">0</b></div>
+          <div><small>REG</small><b id="regCount" class="c-reg">0</b></div>
+          <div><small>合成</small><b id="combined">-</b></div>
+        </div>
+        <ol id="history" class="history"></ol>
+      </div>
+
+      <div class="panel info">
+        <h2>この台の確率</h2>
+        <table>
+          <tr><th>BIG</th><td id="pBig"></td></tr>
+          <tr><th>REG</th><td id="pReg"></td></tr>
+          <tr><th>ボーナス合算</th><td id="pAll"></td></tr>
+          <tr><th>継続率</th><td id="pCont"></td></tr>
+        </table>
+        <ul class="guide">
+          <li><b>てぃだランプ</b>が光ればボーナス確定！</li>
+          <li>告知はレバーON・第3停止・次ゲームの3パターン</li>
+          <li><span class="rainbow-text">レインボー</span>はBIG確定</li>
+          <li>ボーナスの最終ゲームで<b>継続チャレンジ</b></li>
+          <li>BIG <span id="gBig"></span>G／REG <span id="gReg"></span>G。1ゲームごとに3枚ベット・13枚払い出し</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div id="overlay" class="overlay" hidden><div class="overlay-inner" id="overlayInner"></div></div>
+<script src="game.js" type="module"></script>
+</body>
+</html>

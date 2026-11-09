@@ -1,0 +1,12 @@
+{
+  "name": "tida-paradise",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "sim": "node tools/sim.mjs"
+  },
+  "dependencies": { "dotenv": "^16.4.5", "express": "^5.1.0" }
+}
