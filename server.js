@@ -9,6 +9,8 @@ import { getState, save, allStates } from './src/store.js';
 const app = express();
 app.use(express.json({ limit: '8kb' }));
 app.use(express.static('public'));
+// フォントは npm の @fontsource から配信する（ネットにつながらない教室でも表示できる）
+app.use('/fonts', express.static('node_modules/@fontsource', { maxAge: '7d' }));
 
 const logins = new Map(); // cookie => { playerToken, user }（メモリ上のみ）
 const busy = new Set();   // 回転処理中のプレイヤー（連打で二重に回さない）

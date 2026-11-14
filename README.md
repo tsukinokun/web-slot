@@ -45,6 +45,7 @@ npm start
 | `server.js` | ログイン、1回転ごとの銀行とのやりとり |
 | `src/store.js` | プレイヤーごとの台の状態を `data/state.json` に保存 |
 | `public/` | 画面・リール・演出・音 |
+| `node_modules/@fontsource/` | フォント（Dela Gothic One・Zen Maru Gothic・DotGothic16・Yomogi）。サーバーが `/fonts` で配信するので、ネットにつながらない教室でも表示できる |
 | `tools/sim.mjs` | 機械割シミュレーター（`npm run sim`） |
 
 `src/spec.js` を変えたら、必ず `npm run sim` で機械割を確認してください。

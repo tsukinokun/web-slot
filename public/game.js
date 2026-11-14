@@ -73,7 +73,7 @@ const N = 21, SPEED = 22; // コマ/秒
 
 class Reel {
   constructor(i) {
-    this.i = i; this.strip = STRIPS[i]; this.el = $(`strip${i}`);
+    this.i = i; this.strip = STRIPS[i]; this.el = $(`strip${i}`); this.box = this.el.parentElement;
     this.el.innerHTML = [...this.strip, ...this.strip, ...this.strip].map(s => `<div class="cell">${SYMBOL_HTML[s]}</div>`).join('');
     this.pos = Math.floor(Math.random() * N); // 中段に来ているコマ番号（小数あり）
     this.spinning = false; this.render();
@@ -83,14 +83,14 @@ class Reel {
     const top = ((this.pos - 1) % N + N) % N + N; // 上段のコマ（真ん中の束を使う）
     this.el.style.transform = `translateY(${-top * cell}px)`;
   }
-  start() { this.spinning = true; this.stopping = null; }
+  start() { this.spinning = true; this.stopping = null; this.box.classList.remove('landed'); this.box.classList.add('spinning'); }
   tick(dt) {
     if (!this.spinning) return;
     if (this.stopping) {
       const s = this.stopping; s.t += dt;
       const k = Math.min(1, s.t / s.dur), ease = 1 - Math.pow(1 - k, 3);
       this.pos = s.from - (s.from - s.to) * ease;
-      if (k >= 1) { this.pos = ((s.to % N) + N) % N; this.spinning = false; this.stopping = null; s.done(); }
+      if (k >= 1) { this.pos = ((s.to % N) + N) % N; this.spinning = false; this.stopping = null; this.box.classList.remove('spinning'); retrigger(this.box, 'landed'); s.done(); }
     } else this.pos -= SPEED * dt; // 図柄は上から下へ流れる
     this.render();
   }
@@ -119,9 +119,11 @@ async function api(path, options = {}) {
   if (!res.ok) throw Object.assign(Error(data.error || '通信に失敗しました'), { status: res.status });
   return data;
 }
-function message(html) { $('message').innerHTML = html; }
+function retrigger(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function message(html) { const m = $('message'); if (m.innerHTML === html) return; m.innerHTML = html; retrigger(m, 'new'); }
 function setLamp(color) { $('lamp').className = 'lamp' + (color === 'rainbow' ? ' rainbow' : color ? ' on' : ''); }
-function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function shake(el) { retrigger(el, 'shake'); }
+function setPhase(p) { phase = p; document.body.dataset.phase = p === 'spinning' ? 'spin' : p; updateButtons(); }
 function petals(n = 30) {
   const box = $('petals');
   for (let i = 0; i < n; i++) {
@@ -136,43 +138,129 @@ function petals(n = 30) {
 async function overlay(html, ms) { $('overlayInner').innerHTML = html; $('overlay').hidden = false; await sleep(ms); }
 function closeOverlay() { $('overlay').hidden = true; }
 
-function rate() { return Number($('rate').value); }
+// 台の上の電球を、アーチに沿って並べる
+function buildBulbs() {
+  const box = $('bulbs'), n = 26;
+  box.innerHTML = '';
+  for (let k = 0; k < n; k++) {
+    const t = Math.PI * (k / (n - 1));           // 左下 → 上 → 右下
+    const b = document.createElement('i');
+    b.style.left = 50 - 48 * Math.cos(t) + '%';
+    b.style.top = 92 - 84 * Math.sin(t) + '%';
+    b.style.animationDelay = (k * 0.055).toFixed(3) + 's';
+    box.appendChild(b);
+  }
+}
+
+// 数字をくるくる変える
+const rolling = new WeakMap();
+function rollNumber(el, to, { prefix = '', suffix = '', ms = 600 } = {}) {
+  const from = Number(el.dataset.value ?? to);
+  el.dataset.value = to;
+  cancelAnimationFrame(rolling.get(el));
+  if (from === to) { el.textContent = prefix + fmt(to) + suffix; return; }
+  const t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / ms), v = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+    el.textContent = prefix + fmt(v) + suffix;
+    if (k < 1) rolling.set(el, requestAnimationFrame(step));
+  };
+  rolling.set(el, requestAnimationFrame(step));
+}
+
+// 払い出しのメダルを、リールから貸機へ飛ばす
+function flyCoins(n) {
+  const from = $('reelsFrame').getBoundingClientRect(), to = $('coinSlot').getBoundingClientRect();
+  const fx = $('fx');
+  const tag = document.createElement('div');
+  tag.className = 'float-pay'; tag.textContent = `+${n}`;
+  tag.style.left = from.left + from.width / 2 - 20 + 'px'; tag.style.top = from.top + from.height / 2 - 20 + 'px';
+  fx.appendChild(tag); setTimeout(() => tag.remove(), 1000);
+  for (let i = 0; i < Math.min(n, 14); i++) {
+    const c = document.createElement('i'); c.className = 'coin'; fx.appendChild(c);
+    const sx = from.left + from.width * (0.25 + Math.random() * 0.5), sy = from.top + from.height * 0.5;
+    const ex = to.left + to.width / 2, ey = to.top + to.height / 2;
+    const arc = -80 - Math.random() * 90;
+    c.animate([
+      { transform: `translate(${sx}px, ${sy}px) scale(.4)`, opacity: 0 },
+      { transform: `translate(${(sx + ex) / 2}px, ${Math.min(sy, ey) + arc}px) scale(1) rotateY(360deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(${ex}px, ${ey}px) scale(.6) rotateY(720deg)`, opacity: .9 },
+    ], { duration: 650 + Math.random() * 250, delay: i * 45, easing: 'cubic-bezier(.3,.1,.4,1)', fill: 'forwards' })
+      .finished.then(() => c.remove());
+  }
+}
+async function countPay(n) {
+  const el = $('payView');
+  for (let i = 1; i <= n; i++) { el.textContent = i; retrigger(el, 'bump'); await sleep(Math.max(18, 140 / n)); }
+}
+
+// ---- 1枚の値段 ----
+let currentRate = 10;
+try { currentRate = Math.min(33, Math.max(10, Number(localStorage.getItem('tida-rate')) || 10)); } catch {}
+function rate() { return currentRate; }
+function setRate(v) {
+  if (state?.lockedRate) return;
+  const min = info?.rateMin ?? 10, max = info?.rateMax ?? 33;
+  currentRate = Math.min(max, Math.max(min, v));
+  try { localStorage.setItem('tida-rate', currentRate); } catch {}
+  retrigger($('rateView'), 'tick');
+  showRate();
+}
 function showRate() {
   const locked = state?.lockedRate;
-  if (locked) $('rate').value = locked;
-  $('rateView').textContent = rate(); $('spinCost').textContent = rate() * 3;
-  $('rate').disabled = Boolean(locked);
-  document.querySelectorAll('[data-rate]').forEach(b => b.disabled = Boolean(locked));
+  if (locked) currentRate = locked;
+  $('rateView').textContent = currentRate; $('spinCost').textContent = currentRate * 3;
+  document.querySelectorAll('.chip').forEach(b => { b.disabled = Boolean(locked); b.classList.toggle('on', Number(b.dataset.rate) === currentRate); });
+  $('rateUp').disabled = $('rateDown').disabled = Boolean(locked);
   $('rateLock').hidden = !locked;
-  if (!phaseBusy()) $('betView').textContent = rate() * 3;
+  if (phase === 'idle') $('betView').textContent = currentRate * 3;
 }
-const phaseBusy = () => phase !== 'idle';
 
 function showBonusBar() {
   const b = state?.bonus;
   if (!b || b.game === 0) { $('bonusBar').hidden = true; return; }
   $('bonusBar').hidden = false;
   $('bonusBar').className = 'bonus-bar ' + b.type;
-  $('bonusBar').textContent = `${b.type.toUpperCase()} ${b.game}/${b.total}G　獲得 ${b.got}枚${b.chain > 1 ? `　${b.chain}連チャン中` : ''}`;
+  $('bonusBar').textContent = `${b.type.toUpperCase()} ${b.game}/${b.total}G ・ ${b.got}枚${b.chain > 1 ? ` ・ ${b.chain}連` : ''}`;
 }
 function setMode(type) {
   if (type) document.body.dataset.mode = type; else delete document.body.dataset.mode;
 }
 
+let lastCounts = null;
 function showStats() {
   const s = state.stats;
-  $('since').textContent = s.since; $('spins').textContent = fmt(s.spins);
+  if (String(s.since) !== $('since').textContent) { $('since').textContent = s.since; retrigger($('since'), 'tick'); }
+  rollNumber($('spins'), s.spins, { ms: 300 });
   $('bigCount').textContent = s.big; $('regCount').textContent = s.reg;
+  if (lastCounts) {
+    if (s.big > lastCounts.big) retrigger($('bulbBig'), 'on');
+    if (s.reg > lastCounts.reg) retrigger($('bulbReg'), 'on');
+  }
+  lastCounts = { big: s.big, reg: s.reg };
   $('combined').textContent = s.big + s.reg ? '1/' + Math.round((s.normal || 0) / (s.big + s.reg)) : '-';
+  // 当たりまでのゲーム数のグラフ（古い順に左から）
+  const hits = s.history.slice(0, 20).reverse();
+  const max = Math.max(300, ...hits.map(h => h.since));
+  const sig = hits.map(h => h.type + h.since).join();
+  if ($('graph').dataset.sig !== sig) {
+    $('graph').dataset.sig = sig;
+    $('graph').innerHTML = hits.length
+      ? hits.map((h, i) => `<i class="${h.type}" title="${h.type.toUpperCase()} ${h.since}G" style="height:${Math.max(6, h.since / max * 100)}%;animation-delay:${i * 30}ms"></i>`).join('')
+      : '<span class="empty">当たりが出るとグラフが伸びます</span>';
+  }
   $('history').innerHTML = s.history.map(h =>
-    `<li><span class="t-${h.type}">${h.type.toUpperCase()}</span><span>${h.since}G${h.chain > 1 ? `（${h.chain}連）` : ''}</span><span>${h.got}枚</span></li>`).join('');
+    `<li><span class="t-${h.type}">${h.type.toUpperCase()}</span><span>${h.since}G${h.chain > 1 ? ` ${h.chain}連` : ''}</span><span>${h.got}枚</span></li>`).join('');
   const net = s.payG - s.betG;
-  $('sessionNet').textContent = `この台での収支 ${net >= 0 ? '+' : ''}${fmt(net)}G`;
+  $('sessionNet').innerHTML = `この台で <span class="${net >= 0 ? 'plus' : 'minus'}">${net >= 0 ? '+' : ''}${fmt(net)}G</span>`;
   showBonusBar(); showRate();
 }
 async function loadBalance() {
-  try { const u = await api('/api/balance'); $('balance').textContent = `残高 ${fmt(u.balance)}G` + (u.debt ? `（借金 ${fmt(u.debt)}G）` : ''); }
-  catch (err) { $('balance').textContent = err.message; if (err.status === 401) showLogin(); }
+  try {
+    const u = await api('/api/balance');
+    rollNumber($('balance'), u.balance, { suffix: 'G', ms: 700 });
+    $('debt').textContent = u.debt ? `借金 ${fmt(u.debt)}G` : '';
+  } catch (err) { $('balance').textContent = '---'; message(err.message); if (err.status === 401) showLogin(); }
 }
 
 function updateButtons() {
@@ -183,16 +271,16 @@ function updateButtons() {
 async function lever() {
   if (phase !== 'idle') return;
   Sound.unlock();
-  phase = 'requesting'; updateButtons();
+  setPhase('requesting');
   Sound.lever();
   $('reelsFrame').classList.remove('win');
   $('payView').textContent = 0;
   let res;
   try { res = await api('/api/spin', { method: 'POST', body: JSON.stringify({ rate: rate() }) }); }
-  catch (err) { message(err.message); phase = 'idle'; updateButtons(); if (err.status === 401) showLogin(); return; }
+  catch (err) { message(err.message); setPhase('idle'); if (err.status === 401) showLogin(); return; }
   current = res; stopped = [false, false, false];
   $('betView').textContent = res.bet;
-  message(res.bonus ? `${res.bonus.type.toUpperCase()} ${res.bonus.game}/${res.bonus.total}G` : '&nbsp;');
+  message(res.bonus ? `${res.bonus.type.toUpperCase()} ${res.bonus.game}/${res.bonus.total}G` : '・・・');
 
   // レバーONの演出：フリーズ → 先告知 → 予兆
   if (res.lamp?.freeze) {
@@ -206,15 +294,15 @@ async function lever() {
     shake($('lamp'));
     if (!res.fanfare) message(res.lamp.next ? '次ゲーム告知！' : 'ボーナス確定！');
   }
-  if (res.hint) { Sound.hint(); $('reelsFrame').classList.add('flash'); setTimeout(() => $('reelsFrame').classList.remove('flash'), 700); }
+  if (res.hint) { Sound.hint(); retrigger($('reelsFrame'), 'flash'); setTimeout(() => $('reelsFrame').classList.remove('flash'), 700); }
 
   reels.forEach(r => r.start());
-  phase = 'spinning'; updateButtons();
+  setPhase('spinning');
   // リールは自動で左から順に止まる。7-7 のリーチのときは最後のリールをじらす
   await sleep(800);
   for (let i = 0; i < 3; i++) {
     const reach = i === 2 && current.symbols[0] === 'seven' && current.symbols[1] === 'seven';
-    if (reach) { $('reelsFrame').classList.add('reach'); await sleep(900); }
+    if (reach) { $('reelsFrame').classList.add('reach'); message('リーチ!!'); await sleep(900); }
     await stopReel(i);
     $('reelsFrame').classList.remove('reach');
     if (i < 2) await sleep(220);
@@ -223,11 +311,10 @@ async function lever() {
 
 function stopReel(i) {
   if (phase !== 'spinning' || stopped[i]) return stopQueue;
-  stopped[i] = true; updateButtons();
+  stopped[i] = true;
   stopQueue = stopQueue.then(async () => {
     await reels[i].stop(current.symbols[i]);
     Sound.stop(i);
-    // 7-7 のリーチ
     const shown = current.symbols.filter((_, k) => stopped[k] && !reels[k].spinning);
     if (shown.length === 2 && shown.every(s => s === 'seven')) Sound.reach();
     if (stopped.every(Boolean) && reels.every(r => !r.spinning)) await finish();
@@ -236,7 +323,7 @@ function stopReel(i) {
 }
 
 async function finish() {
-  phase = 'result'; updateButtons();
+  setPhase('result');
   const res = current;
   // 後告知（第3停止）
   if (res.lamp?.timing === 'stop3') {
@@ -246,23 +333,24 @@ async function finish() {
   }
   // ボーナス開始のファンファーレ
   if (res.fanfare) {
-    setLamp(null); setMode(res.fanfare); Sound.fanfare(res.fanfare); petals(40);
-    await overlay(`<div class="ov-fanfare ${res.fanfare}">${res.fanfare === 'big' ? 'BIG BONUS!!' : 'REGULAR BONUS!'}</div>`, 1600);
+    setLamp(null); setMode(res.fanfare); Sound.fanfare(res.fanfare); petals(40); retrigger(document.body, 'quake');
+    await overlay(`<div class="ov-fanfare ${res.fanfare}">${res.fanfare === 'big' ? 'BIG<br>BONUS!!' : 'REGULAR<br>BONUS!'}</div>`, 1600);
     closeOverlay(); Sound.bgm(res.fanfare);
   }
   if (res.payout > 0) {
     $('reelsFrame').classList.add('win');
-    $('payView').textContent = res.pay;
     Sound.coin(res.pay);
-    if (!res.bonus) message(`${{ replay: 'リプレイ', grape: 'ブドウ', cherry: 'チェリー' }[res.role] || ''} +${res.pay}枚（${fmt(res.payout)}G）`);
+    flyCoins(res.pay);
+    if (!res.bonus) message(`${{ replay: 'リプレイ', grape: 'ブドウ', cherry: 'チェリー' }[res.role] || ''} ${res.pay}枚（${fmt(res.payout)}G）`);
+    await countPay(res.pay);
   }
   state = res.state;
   showStats();
-  if (res.bonus) message(`${res.bonus.type.toUpperCase()} 残り${res.bonus.left}G　+${fmt(res.payout)}G`);
+  if (res.bonus) message(`${res.bonus.type.toUpperCase()} のこり${res.bonus.left}G ・ +${fmt(res.payout)}G`);
   if (res.chain) await chainChallenge(res);
   if (res.warning) message(res.warning);
   loadBalance();
-  phase = 'idle'; updateButtons();
+  setPhase('idle');
 }
 
 // ボーナス最終ゲームの継続チャレンジ
@@ -277,33 +365,33 @@ async function chainChallenge(res) {
     Sound.drumroll(0.9); await sleep(900);
   }
   if (continued) {
-    Sound.win(); petals(60); setLamp(level === 4 ? 'rainbow' : 'sun');
-    await overlay(`<div class="ov-result win">継続!!</div><div class="ov-sub">${count + 1}連チャン目　次は ${next.toUpperCase()}</div>`, 2200);
-    message('継続！レバーでボーナス開始');
+    Sound.win(); petals(60); setLamp(level === 4 ? 'rainbow' : 'sun'); retrigger(document.body, 'quake');
+    await overlay(`<div class="ov-result win">継続!!</div><div class="ov-sub">${count + 1}連チャン目 ・ 次は ${next.toUpperCase()}</div>`, 2200);
+    message('継続！回してボーナス開始');
   } else {
     Sound.lose(); setMode(null);
-    await overlay(`<div class="ov-result lose">終了</div><div class="ov-sub">${count}連チャン　獲得 ${res.bonus.got}枚（${fmt(gotG)}G）</div>`, 2000);
-    message(`おつかれさま！${count}連チャンで終了`);
+    await overlay(`<div class="ov-result lose">おわり</div><div class="ov-sub">${count}連チャン ・ ${res.bonus.got}枚（${fmt(gotG)}G）</div>`, 2000);
+    message(`おつかれさま！ ${count}連チャンでした`);
   }
   closeOverlay();
 }
 
 // ================= ログイン =================
-function showGame(user) { $('loginPanel').hidden = true; $('gamePanel').hidden = false; $('welcome').textContent = `${user.name} さん`; }
+function showGame(user) { $('loginPanel').hidden = true; $('gamePanel').hidden = false; $('welcome').textContent = `${user.name} さん`; buildBulbs(); reels.forEach(r => r.render()); }
 function showLogin() { Sound.bgmStop(); setMode(null); $('gamePanel').hidden = true; $('loginPanel').hidden = false; }
 function restore(s) {
-  state = s; showStats();
-  if (s.lampOn) { setLamp('sun'); message('ボーナス確定中！レバーでボーナス開始'); }
+  state = s; lastCounts = null; showStats();
+  if (s.lampOn) { setLamp('sun'); message('ボーナス確定中！回してボーナス開始'); }
   if (s.bonus && s.bonus.game > 0) { setMode(s.bonus.type); message('ボーナス中！'); }
 }
 
 $('loginForm').onsubmit = async e => {
-  e.preventDefault(); $('loginMessage').textContent = '認証中…';
+  e.preventDefault(); $('loginMessage').textContent = '確認中…';
   try {
     const { user } = await api('/api/login', { method: 'POST', body: JSON.stringify({ username: $('username').value, password: $('password').value }) });
     $('password').value = ''; $('loginMessage').textContent = '';
     const me = await api('/api/me'); showGame(user); restore(me.state); loadBalance();
-  } catch (err) { $('loginMessage').textContent = err.message; }
+  } catch (err) { $('loginMessage').textContent = err.message; shake($('loginForm')); }
 };
 $('logout').onclick = async () => {
   if (phase !== 'idle') return;
@@ -313,12 +401,13 @@ $('logout').onclick = async () => {
 
 // ================= 操作 =================
 $('lever').onclick = lever;
-$('rate').oninput = showRate;
-document.querySelectorAll('[data-rate]').forEach(b => b.onclick = () => { $('rate').value = b.dataset.rate; showRate(); });
+$('rateUp').onclick = () => setRate(currentRate + 1);
+$('rateDown').onclick = () => setRate(currentRate - 1);
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => setRate(Number(b.dataset.rate)));
 $('sound').onchange = () => { try { localStorage.setItem('tida-sound', $('sound').checked ? '1' : '0'); } catch {} if (!$('sound').checked) Sound.bgmStop(); else if (state?.bonus?.game > 0) Sound.bgm(state.bonus.type); };
 try { $('sound').checked = localStorage.getItem('tida-sound') !== '0'; } catch {}
 addEventListener('keydown', e => {
-  if ($('gamePanel').hidden || e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return;
+  if ($('gamePanel').hidden || e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') return;
   if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); lever(); }
 });
 
@@ -328,7 +417,6 @@ api('/api/info').then(i => {
   $('pBig').textContent = `1/${i.big}`; $('pReg').textContent = `1/${i.reg}`;
   $('pAll').textContent = `1/${i.combined}`; $('pCont').textContent = `${i.continueRate}%`;
   $('gBig').textContent = i.bigGames; $('gReg').textContent = i.regGames;
-  $('rate').min = i.rateMin; $('rate').max = i.rateMax;
 });
 api('/api/me').then(me => { showGame(me.user); restore(me.state); loadBalance(); }).catch(() => showLogin());
 updateButtons();
